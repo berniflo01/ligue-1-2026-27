@@ -60,10 +60,27 @@ async function showApp() {
   document.getElementById('bottom-nav').style.display = 'flex';
   document.getElementById('header-name').textContent = currentUser;
   if (!pronosCharges) {
-    await Promise.all([chargerTousLesPronos(), chargerCotes()]);
+    await Promise.all([chargerMatchsL1(), chargerTousLesPronos(), chargerCotes()]);
     pronosCharges = true;
   }
   switchTab('pronos');
+}
+
+async function chargerMatchsL1() {
+  try {
+    const res = await fetch(`${APPS_SCRIPT_URL_L1}?action=matchs_l1`);
+    const data = await res.json();
+    if (!data.ok) return;
+    MATCHS_L1 = data.matchs;
+  } catch(e) {}
+}
+
+// Convertit une date "dd/MM/yyyy" (format sheet FR) en objet Date
+function parseDateFR(dateStr) {
+  if (!dateStr) return null;
+  const [jj, mm, aaaa] = dateStr.split('/');
+  if (!jj || !mm || !aaaa) return null;
+  return new Date(`${aaaa}-${mm}-${jj}T00:00:00`);
 }
 
 async function chargerCotes() {
@@ -223,7 +240,7 @@ function buildMatchCard(match) {
 
   card.innerHTML = `
     <div class="match-header">
-      <span class="match-meta">${match.heure} · ${new Date(match.date + 'T00:00:00').toLocaleDateString('fr-FR', {day:'numeric',month:'short'})}</span>
+      <span class="match-meta">${match.heure} · ${(parseDateFR(match.date) || new Date()).toLocaleDateString('fr-FR', {day:'numeric',month:'short'})}</span>
       <div style="display:flex;gap:5px;align-items:center">${lockBadge}${badgeExact}</div>
     </div>
     <div class="match-teams">
