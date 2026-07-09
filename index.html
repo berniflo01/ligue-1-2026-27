@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Challenge L1 2025-26</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Challenge L1">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0a0a0f">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0a0f; --surface: #13131a; --surface2: #1a1a24; --border: #252535;
+  --gold: #FFD700; --gold-dim: #FFD70020; --green: #00e676; --green-dim: #00e67620;
+  --amber: #ffab00; --amber-dim: #ffab0020; --red: #ff1744; --red-dim: #ff174420;
+  --blue: #2979ff; --blue-dim: #2979ff20; --text: #f0f0f5; --text-muted: #6b6b7a;
+  --text-sub: #9999aa; --radius: 14px; --radius-sm: 8px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; min-height: 100dvh; overflow-x: hidden; }
+
+#login-screen { min-height: 100dvh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; background: radial-gradient(ellipse at 50% 0%, #001a0e 0%, var(--bg) 60%); }
+.logo { font-family: 'Bebas Neue', sans-serif; font-size: 40px; letter-spacing: 3px; color: var(--green); line-height: 1; text-align: center; text-shadow: 0 0 40px #00e67650; }
+.logo-sub { font-size: 16px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; color: var(--text); margin-bottom: 40px; margin-top: 6px; text-align: center; }
+.login-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px 24px; width: 100%; max-width: 380px; }
+.login-card h2 { font-size: 16px; font-weight: 600; margin-bottom: 20px; color: var(--text-sub); }
+.field-label { font-size: 11px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px; display: block; }
+select, input[type="password"] { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 15px; padding: 13px 14px; outline: none; appearance: none; -webkit-appearance: none; transition: border-color 0.2s; margin-bottom: 16px; }
+select:focus, input[type="password"]:focus { border-color: var(--green); }
+.select-wrap { position: relative; }
+.select-wrap::after { content: '▾'; position: absolute; right: 14px; top: 50%; transform: translateY(-60%); color: var(--text-muted); pointer-events: none; font-size: 14px; }
+.btn-primary { width: 100%; background: var(--green); color: #000; border: none; border-radius: var(--radius-sm); font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 2px; padding: 14px; cursor: pointer; transition: opacity 0.2s, transform 0.1s; margin-top: 4px; }
+.btn-primary:active { transform: scale(0.98); opacity: 0.9; }
+.error-msg { background: var(--red-dim); border: 1px solid var(--red); color: var(--red); border-radius: var(--radius-sm); padding: 10px 14px; font-size: 13px; margin-top: 12px; display: none; }
+
+.app-header { position: sticky; top: 0; z-index: 100; background: var(--bg); border-bottom: 1px solid var(--border); padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; }
+.header-logo { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 2px; color: var(--green); }
+.header-user { font-size: 13px; color: var(--text-muted); display: flex; align-items: center; gap: 6px; }
+.header-user span { color: var(--text); font-weight: 600; font-size: 13px; }
+.logout-btn { background: none; border: 1px solid var(--border); border-radius: 6px; color: var(--text-muted); font-size: 11px; padding: 4px 8px; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+
+.screen { display: none; min-height: 100dvh; padding-bottom: 80px; }
+.screen.active { display: block; }
+
+.journee-block { margin: 0 0 18px; }
+.journee-title-bar { padding: 12px 16px 8px; display: flex; align-items: center; justify-content: space-between; }
+.journee-title { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 1px; color: var(--green); }
+.journee-sub { font-size: 11px; color: var(--text-muted); font-weight: 600; letter-spacing: 0.5px; }
+
+.match-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); margin: 0 12px 10px; overflow: hidden; transition: border-color 0.15s; }
+.match-card.sel-1 { border-color: var(--green); } .match-card.sel-n { border-color: var(--green); } .match-card.sel-2 { border-color: var(--green); } .match-card.sel-score { border-color: var(--gold); }
+.match-card.locked { opacity: 0.5; pointer-events: none; }
+.match-card.score-exact-card { border-color: var(--gold-dim); }
+
+.match-header { padding: 7px 12px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); }
+.match-meta { font-size: 14px; font-weight: 700; color: #ffffff; letter-spacing: 0.3px; }
+.match-badge { font-size: 10px; font-weight: 700; letter-spacing: 0.5px; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; }
+.badge-finale { background: var(--gold-dim); color: var(--gold); border: 1px solid #FFD70030; }
+.badge-lock { background: var(--red-dim); color: var(--red); border: 1px solid #ff174430; font-size: 9px; }
+
+.match-teams { padding: 12px 14px 8px; display: flex; align-items: center; justify-content: space-between; }
+.team { flex: 1; text-align: center; }
+.team-name { font-size: 17px; font-weight: 700; color: var(--text); line-height: 1.2; }
+.cote-label { font-size: 9px; letter-spacing: 1px; color: var(--text-muted); margin-top: 1px; }
+.vs { font-family: 'Bebas Neue', sans-serif; font-size: 15px; color: var(--text-muted); padding: 0 6px; flex-shrink: 0; }
+
+.prono-buttons { display: grid; grid-template-columns: 1fr 1fr 1fr; border-top: 1px solid var(--border); }
+.prono-btn { background: none; border: none; padding: 12px 0; font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 1px; cursor: pointer; color: var(--text); transition: all 0.1s; }
+.prono-btn:not(:last-child) { border-right: 1px solid var(--border); }
+.prono-btn.a-1 { background: var(--green-dim); color: var(--green); } .prono-btn.a-n { background: var(--green-dim); color: var(--green); } .prono-btn.a-2 { background: var(--green-dim); color: var(--green); }
+.prono-btn:active { opacity: 0.7; }
+.saving-indicator { font-size: 10px; color: var(--text-muted); text-align: center; padding: 4px; letter-spacing: 1px; }
+
+.score-input-zone { border-top: 1px solid var(--border); padding: 10px 14px; display: flex; align-items: center; justify-content: center; gap: 10px; }
+.score-field { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.score-input { width: 60px; background: var(--surface2); border: 2px solid var(--gold); border-radius: var(--radius-sm); color: #fff; font-family: 'Bebas Neue', sans-serif; font-size: 32px; text-align: center; padding: 8px 4px; outline: none; -webkit-appearance: none; -moz-appearance: textfield; }
+.score-input:focus { border-color: var(--amber); }
+.score-input::-webkit-inner-spin-button, .score-input::-webkit-outer-spin-button { -webkit-appearance: none; }
+.score-sep { font-family: 'Bebas Neue', sans-serif; font-size: 32px; color: var(--text); }
+
+.bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--surface); border-top: 1px solid var(--border); display: flex; z-index: 100; }
+.nav-btn { flex: 1; background: none; border: none; padding: 12px 0 10px; display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; color: var(--text-muted); font-family: 'DM Sans', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; }
+.nav-btn.active { color: var(--green); }
+.nav-btn svg { width: 20px; height: 20px; }
+
+.section-title { padding: 16px 16px 8px; }
+.section-title .big { font-family: 'Bebas Neue', sans-serif; font-size: 28px; letter-spacing: 2px; color: var(--green); }
+.section-title .sub { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+
+.histo-date-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px 4px; font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--green); cursor: pointer; user-select: none; }
+.histo-match-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); margin: 0 12px 8px; overflow: hidden; }
+.histo-match-row { padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; gap: 8px; border-bottom: 1px solid var(--border); font-size: 13px; }
+.histo-match-row:last-child { border-bottom: none; }
+.histo-teams { flex: 1; color: #ffffff; font-size: 14px; font-weight: 600; }
+.histo-res { font-weight: 700; font-size: 13px; min-width: 30px; text-align: center; }
+.histo-prono { font-weight: 700; font-size: 13px; padding: 2px 10px; border-radius: 4px; min-width: 44px; text-align: center; }
+.bon { background: var(--green-dim); color: var(--green); } .mauvais { background: var(--red-dim); color: var(--red); } .neutre { background: var(--surface2); color: var(--text-muted); } .partiel { background: var(--amber-dim); color: var(--amber); border: 1px solid #ffab0040; }
+.histo-pts { font-size: 12px; color: var(--amber); min-width: 44px; text-align: right; }
+.histo-bonus-badge { margin: 0 12px 8px; padding: 8px 14px; background: var(--surface); border: 1px solid var(--gold-dim); border-radius: var(--radius-sm); display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
+.voir-pronos-btn { width: 100%; background: none; border: none; border-top: 1px solid var(--border); padding: 8px 14px; font-size: 11px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--text-muted); cursor: pointer; text-align: left; font-family: 'DM Sans', sans-serif; transition: color 0.2s; }
+.voir-pronos-btn:hover { color: var(--green); }
+.pronos-tous { background: var(--surface2); border-top: 1px solid var(--border); padding: 8px 14px; display: none; }
+.pronos-tous.open { display: block; }
+.prono-joueur-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 1px solid #ffffff08; font-size: 12px; }
+.prono-joueur-row:last-child { border-bottom: none; }
+.prono-joueur-nom { color: var(--text-sub); flex: 1; }
+.prono-joueur-val { font-weight: 700; font-size: 13px; padding: 1px 8px; border-radius: 4px; min-width: 32px; text-align: center; }
+
+.cls-row { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 8px; padding: 12px 16px; display: flex; align-items: center; gap: 12px; }
+.cls-row.moi { border-color: var(--green); background: var(--green-dim); }
+.rang { font-family: 'Bebas Neue', sans-serif; font-size: 22px; min-width: 32px; text-align: center; }
+.rang-1 { color: #FFD700; } .rang-2 { color: #C0C0C0; } .rang-3 { color: #CD7F32; } .rang-other { color: var(--text-muted); }
+.cls-nom { flex: 1; font-weight: 600; font-size: 14px; }
+.cls-pts { font-family: 'Bebas Neue', sans-serif; font-size: 20px; color: var(--green); }
+
+.saison-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 16px; margin: 0 12px 12px; }
+.saison-card-title { font-family: 'Bebas Neue', sans-serif; font-size: 18px; color: var(--gold); letter-spacing: 1px; margin-bottom: 12px; }
+.saison-card.descente .saison-card-title { color: var(--red); }
+.saison-select { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 15px; padding: 12px; outline: none; appearance: none; -webkit-appearance: none; }
+.saison-locked-val { font-size: 16px; font-weight: 700; color: var(--text); }
+
+.toast { position: fixed; top: 80px; left: 50%; transform: translateX(-50%) translateY(-20px); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 16px; font-size: 13px; color: var(--text); opacity: 0; transition: all 0.3s; z-index: 200; white-space: nowrap; max-width: 90vw; text-align: center; }
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.empty-state { text-align: center; padding: 60px 24px; color: var(--text-muted); }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="logo">CHALLENGE L1</div>
+  <div class="logo-sub">Saison 2025-26</div>
+  <div class="login-card">
+    <h2>Connexion</h2>
+    <label class="field-label">Ton nom</label>
+    <div class="select-wrap">
+      <select id="select-joueur"><option value="">— Sélectionne ton nom —</option></select>
+    </div>
+    <label class="field-label">Mot de passe</label>
+    <input type="password" id="input-mdp" placeholder="••••••••" autocomplete="off">
+    <button class="btn-primary" onclick="login()">ENTRER</button>
+    <div class="error-msg" id="error-msg">Mot de passe incorrect.</div>
+  </div>
+</div>
+
+<!-- PRONOS -->
+<div id="pronos-screen" class="screen">
+  <div class="app-header">
+    <div class="header-logo">CHALLENGE L1</div>
+    <div class="header-user">👤 <span id="header-name">—</span>
+      <button class="logout-btn" onclick="logout()">Quitter</button>
+    </div>
+  </div>
+  <div class="section-title">
+    <div class="big">Pronos</div>
+    <div class="sub">Journées à venir</div>
+  </div>
+  <div id="pronos-container"></div>
+</div>
+
+<!-- SAISON -->
+<div id="saison-screen" class="screen">
+  <div class="app-header">
+    <div class="header-logo">CHALLENGE L1</div>
+    <div class="header-user">👤 <span id="saison-header-name">—</span></div>
+  </div>
+  <div class="section-title">
+    <div class="big">⭐ Pronos Saison</div>
+    <div class="sub" id="saison-deadline-info">Top 3 & relégation</div>
+  </div>
+  <div id="saison-container"></div>
+</div>
+
+<!-- HISTORIQUE -->
+<div id="historique-screen" class="screen">
+  <div class="app-header">
+    <div class="header-logo">CHALLENGE L1</div>
+    <div class="header-user">👤 <span id="histo-name">—</span></div>
+  </div>
+  <div class="section-title">
+    <div class="big">Historique</div>
+    <div class="sub" id="histo-total">Total : —</div>
+  </div>
+  <div id="historique-container"></div>
+</div>
+
+<!-- CLASSEMENT -->
+<div id="classement-screen" class="screen">
+  <div class="app-header">
+    <div class="header-logo">CHALLENGE L1</div>
+    <div style="font-size:12px;color:var(--text-muted)" id="cls-updated">—</div>
+  </div>
+  <div class="section-title">
+    <div class="big">Classement</div>
+  </div>
+  <div style="padding:0 12px" id="classement-container"></div>
+</div>
+
+<nav class="bottom-nav" id="bottom-nav" style="display:none">
+  <button class="nav-btn active" id="nav-pronos" onclick="switchTab('pronos')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+    Pronos
+  </button>
+  <button class="nav-btn" id="nav-saison" onclick="switchTab('saison')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+    Saison
+  </button>
+  <button class="nav-btn" id="nav-historique" onclick="switchTab('historique')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    Historique
+  </button>
+  <button class="nav-btn" id="nav-classement" onclick="switchTab('classement')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    Classement
+  </button>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
