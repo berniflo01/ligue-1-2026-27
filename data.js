@@ -35,30 +35,6 @@ const EQUIPES_L1 = [
 // Date/heure de début de la journée 1 = deadline pour les pronostics de saison
 const DEADLINE_SAISON = '2026-07-12T21:00:00';
 
-// ════════════════════════════════════════
-// CALENDRIER DES MATCHS
-// ════════════════════════════════════════
-// ⚠️ À COMPLÉTER journée par journée par Florian directement sur GitHub.
-// Structure : chaque journée a 9 matchs (m: 1 à 9). Le match m=9 est TOUJOURS
-// le match "score exact" (bonus). row = ligne exacte dans le Sheet (voir data.js
-// helper journeeRows ci-dessous si besoin de recalculer).
-//
-// Exemple pour Journée 1 :
-const MATCHS_L1 = [
-  { journee: 1, m: 1, row: 3,  date: '2026-07-12', heure: '21:00', dom: 'Marseille', ext: 'Lille', scoreExact: false },
-  // { journee: 1, m: 2, row: 4,  date: '2026-07-12', heure: '21:00', dom: '', ext: '', scoreExact: false },
-  // { journee: 1, m: 3, row: 5,  date: '2026-07-12', heure: '21:00', dom: '', ext: '', scoreExact: false },
-  // { journee: 1, m: 4, row: 6,  date: '2026-07-12', heure: '21:00', dom: '', ext: '', scoreExact: false },
-  // { journee: 1, m: 5, row: 7,  date: '2026-07-12', heure: '21:00', dom: '', ext: '', scoreExact: false },
-  // { journee: 1, m: 6, row: 8,  date: '2026-07-12', heure: '21:00', dom: '', ext: '', scoreExact: false },
-  // { journee: 1, m: 7, row: 9,  date: '2026-07-12', heure: '21:00', dom: '', ext: '', scoreExact: false },
-  // { journee: 1, m: 8, row: 10, date: '2026-07-12', heure: '21:00', dom: '', ext: '', scoreExact: false },
-  // { journee: 1, m: 9, row: 11, date: '2026-07-12', heure: '21:00', dom: '', ext: '', scoreExact: true },
-];
-
-// Calcule automatiquement la ligne du sheet pour une journée/match donné
-// headerRow(n) = 2 + (n-1)*12 ; matchRow(n, m) = headerRow(n) + m
-function matchRowL1(journee, m) {
-  const header = 2 + (journee - 1) * 12;
-  return header + m;
-}
+// ⚠️ Les matchs sont maintenant chargés automatiquement depuis le Sheet
+// via l'API (action=matchs_l1). Plus besoin de les éditer ici !
+let MATCHS_L1 = [];
