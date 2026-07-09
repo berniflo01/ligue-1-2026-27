@@ -70,9 +70,9 @@ async function chargerMatchsL1() {
   try {
     const res = await fetch(`${APPS_SCRIPT_URL_L1}?action=matchs_l1`);
     const data = await res.json();
-    if (!data.ok) return;
+    if (!data.ok || !Array.isArray(data.matchs)) { MATCHS_L1 = []; return; }
     MATCHS_L1 = data.matchs;
-  } catch(e) {}
+  } catch(e) { MATCHS_L1 = []; }
 }
 
 // Convertit une date "dd/MM/yyyy" (format sheet FR) en objet Date
