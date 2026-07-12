@@ -60,44 +60,24 @@ async function showApp() {
   document.getElementById('bottom-nav').style.display = 'flex';
   document.getElementById('header-name').textContent = currentUser;
   if (!pronosCharges) {
-    await Promise.all([chargerMatchsL1(), chargerTousLesPronos(), chargerCotes()]);
+    await chargerInitL1();
     pronosCharges = true;
   }
   switchTab('pronos');
 }
 
-async function chargerMatchsL1() {
+// Un seul appel qui regroupe matchs + pronos joueur + cotes (au lieu de 3 requêtes séparées)
+async function chargerInitL1() {
   try {
-    const res = await fetch(`${APPS_SCRIPT_URL_L1}?action=matchs_l1`);
+    const res = await fetch(`${APPS_SCRIPT_URL_L1}?action=init_l1&joueur=${encodeURIComponent(currentUser)}`);
     const data = await res.json();
-    if (!data.ok || !Array.isArray(data.matchs)) { MATCHS_L1 = []; return; }
-    MATCHS_L1 = data.matchs;
-  } catch(e) { MATCHS_L1 = []; }
-}
+    if (!data.ok) { MATCHS_L1 = []; return; }
 
-// Convertit une date "dd/MM/yyyy" (format sheet FR) en objet Date
-function parseDateFR(dateStr) {
-  if (!dateStr) return null;
-  const [jj, mm, aaaa] = dateStr.split('/');
-  if (!jj || !mm || !aaaa) return null;
-  return new Date(`${aaaa}-${mm}-${jj}T00:00:00`);
-}
+    MATCHS_L1 = Array.isArray(data.matchs) ? data.matchs : [];
 
-async function chargerCotes() {
-  try {
-    const res = await fetch(`${APPS_SCRIPT_URL_L1}?action=cotes_l1`);
-    const data = await res.json();
-    if (!data.ok) return;
-    data.cotes.forEach(c => { cotesMap[c.row] = { c1: c.c1, cn: c.cn, c2: c.c2 }; });
-  } catch(e) {}
-}
+    (data.cotes || []).forEach(c => { cotesMap[c.row] = { c1: c.c1, cn: c.cn, c2: c.c2 }; });
 
-async function chargerTousLesPronos() {
-  try {
-    const res = await fetch(`${APPS_SCRIPT_URL_L1}?action=tous_pronos_l1&joueur=${encodeURIComponent(currentUser)}`);
-    const data = await res.json();
-    if (!data.ok) return;
-    data.pronos.forEach(p => {
+    (data.pronos || []).forEach(p => {
       if (p.prono) pronos[p.row] = String(p.prono);
       if (p.scoreExt !== '' && p.scoreExt !== null && p.scoreExt !== undefined && p.prono !== '') {
         const d = parseInt(p.prono), e = parseInt(p.scoreExt);
@@ -108,7 +88,15 @@ async function chargerTousLesPronos() {
         resultatsReels[p.row] = { resultat: p.resultat, scoreExtReel: p.scoreExtReel };
       }
     });
-  } catch(e) {}
+  } catch(e) { MATCHS_L1 = []; }
+}
+
+// Convertit une date "dd/MM/yyyy" (format sheet FR) en objet Date
+function parseDateFR(dateStr) {
+  if (!dateStr) return null;
+  const [jj, mm, aaaa] = dateStr.split('/');
+  if (!jj || !mm || !aaaa) return null;
+  return new Date(`${aaaa}-${mm}-${jj}T00:00:00`);
 }
 
 // ════ TABS ════
@@ -153,13 +141,34 @@ function renderPronos() {
     return;
   }
 
-  journeesAffichables.forEach(n => {
+  journeesAffichables.forEach((n, idx) => {
     const matchs = parJournee[n].slice().sort((a, b) => a.m - b.m);
+    const isOuverte = idx === 0; // seule la prochaine journée à jouer est ouverte par défaut
+
     const block = document.createElement('div');
     block.className = 'journee-block';
     const nbJouees = matchs.filter(m => estMatchJoue(m.row)).length;
-    block.innerHTML = `<div class="journee-title-bar"><div class="journee-title">Journée ${n}</div><div class="journee-sub">${nbJouees}/${matchs.length} joués</div></div>`;
-    matchs.forEach(m => block.appendChild(buildMatchCard(m)));
+
+    const titleBar = document.createElement('div');
+    titleBar.className = 'journee-title-bar';
+    titleBar.style.cursor = 'pointer';
+    titleBar.style.userSelect = 'none';
+    titleBar.innerHTML = `<div class="journee-title">Journée ${n}</div><div style="display:flex;align-items:center;gap:10px"><div class="journee-sub">${nbJouees}/${matchs.length} joués</div><span id="arrow-pj${n}" style="color:var(--green);font-size:14px">${isOuverte ? '▲' : '▼'}</span></div>`;
+    block.appendChild(titleBar);
+
+    const matchsContainer = document.createElement('div');
+    matchsContainer.id = `matchs-j${n}`;
+    matchsContainer.style.display = isOuverte ? 'block' : 'none';
+    matchs.forEach(m => matchsContainer.appendChild(buildMatchCard(m)));
+    block.appendChild(matchsContainer);
+
+    titleBar.onclick = () => {
+      const arrow = document.getElementById(`arrow-pj${n}`);
+      const show = matchsContainer.style.display === 'none';
+      matchsContainer.style.display = show ? 'block' : 'none';
+      arrow.textContent = show ? '▲' : '▼';
+    };
+
     container.appendChild(block);
   });
 }
@@ -294,26 +303,45 @@ function refreshCard(row, presetDom, presetExt) {
   }
 }
 
+// File d'attente : une seule sauvegarde à la fois envoyée à Apps Script,
+// pour éviter les requêtes simultanées qui se marchent dessus.
+let saveQueue = Promise.resolve();
+
 async function sauvegarder(row, prono, scoredom, scoreext) {
   if (savingRows.has(row)) return;
   savingRows.add(row);
   const savEl = document.getElementById(`saving-${row}`);
   if (savEl) savEl.style.display = 'block';
-  try {
-    const payload = { joueur: currentUser, pronos: [scoredom !== null ? { row, scoredom, scoreext } : { row, prono }] };
-    const res = await fetch(APPS_SCRIPT_URL_L1, { method: 'POST', body: JSON.stringify(payload), headers: { 'Content-Type': 'text/plain' } });
-    const data = await res.json();
-    if (data?.error === 'VERROUILLE') {
-      showToast('🔒 Match déjà commencé petit coquin 😄');
-      delete pronos[row]; delete scores[row];
-      refreshCard(row);
+
+  saveQueue = saveQueue.then(() => envoyerSauvegarde(row, prono, scoredom, scoreext));
+  await saveQueue;
+}
+
+async function envoyerSauvegarde(row, prono, scoredom, scoreext) {
+  const MAX_TENTATIVES = 2;
+  let succes = false;
+  for (let tentative = 1; tentative <= MAX_TENTATIVES && !succes; tentative++) {
+    try {
+      const payload = { joueur: currentUser, pronos: [scoredom !== null ? { row, scoredom, scoreext } : { row, prono }] };
+      const res = await fetch(APPS_SCRIPT_URL_L1, { method: 'POST', body: JSON.stringify(payload), headers: { 'Content-Type': 'text/plain' } });
+      const data = await res.json();
+      if (data?.error === 'VERROUILLE') {
+        showToast('🔒 Match déjà commencé petit coquin 😄');
+        delete pronos[row]; delete scores[row];
+        refreshCard(row);
+        succes = true;
+      } else if (data?.ok) {
+        succes = true;
+      } else if (tentative === MAX_TENTATIVES) {
+        showToast('⚠️ Échec de la sauvegarde, réessaie');
+      }
+    } catch(e) {
+      if (tentative === MAX_TENTATIVES) showToast('⚠️ Échec de la sauvegarde, réessaie');
     }
-  } catch(e) {
-  } finally {
-    savingRows.delete(row);
-    const savEl2 = document.getElementById(`saving-${row}`);
-    if (savEl2) savEl2.style.display = 'none';
   }
+  savingRows.delete(row);
+  const savEl2 = document.getElementById(`saving-${row}`);
+  if (savEl2) savEl2.style.display = 'none';
 }
 
 // ════ SAISON (Top3 + Relégation) ════
